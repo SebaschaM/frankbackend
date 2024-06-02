@@ -10,21 +10,16 @@ const saveDashboard = async (req: Request, res: Response) => {
 
   const dashKeys = Object.keys(dashFields);
   if (dashKeys.length !== cantidad) {
-    return res
-      .status(400)
-      .json({
-        message:
-          "La cantidad de campos no coincide con la cantidad especificada",
-      });
+    return res.status(400).json({
+      message: "La cantidad de campos no coincide con la cantidad especificada",
+    });
   }
 
   for (const key in dashFields) {
     if (typeof dashFields[key] !== "string" || dashFields[key].length > 900) {
-      return res
-        .status(400)
-        .json({
-          message: `El campo '${key}' debe ser una cadena con menos de 900 caracteres`,
-        });
+      return res.status(400).json({
+        message: `El campo '${key}' debe ser una cadena con menos de 900 caracteres`,
+      });
     }
   }
 
@@ -49,13 +44,11 @@ const getDashboard = async (_req: Request, res: Response) => {
   try {
     const connection = await pool.getConnection();
     const query = "SELECT * FROM dashboard";
-    const [rows] = await connection.query(query);
-    connection.release();
+    const result = await connection.query(query);
 
     return res.status(200).json({
-      ok: true,
-      data: rows,
       message: "Datos obtenidos correctamente",
+      data: result,
     });
   } catch (err) {
     console.error(err);
