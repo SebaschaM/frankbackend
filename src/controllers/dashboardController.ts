@@ -2,17 +2,40 @@ import { Request, Response } from "express";
 import { pool } from "../config/connectiondb";
 
 const saveDashboard = async (req: Request, res: Response) => {
-  const { dash1, dash2, dash3, dash4 } = req.body;
+  const { cantidad, ...dashFields } = req.body;
 
-  if (!dash1 || !dash2 || !dash3 || !dash4) {
-    return res.status(400).json({ message: "Faltan campos por llenar" });
+  if (!cantidad || cantidad < 1) {
+    return res.status(400).json({ message: "La cantidad debe ser al menos 1" });
+  }
+
+  const dashKeys = Object.keys(dashFields);
+  if (dashKeys.length !== cantidad) {
+    return res
+      .status(400)
+      .json({
+        message:
+          "La cantidad de campos no coincide con la cantidad especificada",
+      });
+  }
+
+  for (const key in dashFields) {
+    if (typeof dashFields[key] !== "string" || dashFields[key].length > 900) {
+      return res
+        .status(400)
+        .json({
+          message: `El campo '${key}' debe ser una cadena con menos de 900 caracteres`,
+        });
+    }
   }
 
   try {
     const connection = await pool.getConnection();
-    const query =
-      "INSERT INTO dashboard (dash1, dash2, dash3, dash4) VALUES (?, ?, ?, ?)";
-    await connection.query(query, [dash1, dash2, dash3, dash4]);
+
+    for (const key in dashFields) {
+      const query = `INSERT INTO dashboard (linkdashboard) VALUES (?)`;
+      await connection.query(query, [dashFields[key]]);
+    }
+
     connection.release();
 
     return res.status(200).json({ message: "Datos insertados correctamente" });
@@ -29,11 +52,11 @@ const getDashboard = async (_req: Request, res: Response) => {
     const [rows] = await connection.query(query);
     connection.release();
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       ok: true,
       data: rows,
-      message: "Datos obtenidos correctamente"
-     });
+      message: "Datos obtenidos correctamente",
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Error al obtener los datos" });
